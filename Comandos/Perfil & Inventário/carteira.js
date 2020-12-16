@@ -1,7 +1,7 @@
-const { Command } = require('../../CommandoV12/src/index.js');
-const Discord = require('discord.js');
+import { Command } from '../../CommandoV12/src/index.js';
+import Discord from 'discord.js';
 
-module.exports = class CarteiraCommand extends Command {
+export default class CarteiraCommand extends Command {
 	constructor(client) {
 		super(client, {
 			name: 'carteira',
@@ -28,12 +28,12 @@ module.exports = class CarteiraCommand extends Command {
 
 	run(msg, { usuário }) {
 
-		const uDB = msg.client.usersData.get(usuário.id)
+		const uDB = msg.client.data.users.resolveUser(usuário)
 
 		const member = msg.client.guilds.cache.get('698560208309452810').members.cache.get(usuário.id);
     
-    const coins = uDB.money;
-    const gems = uDB.gems ? uDB.gems : '0';
+    const coins = uDB.wallet.coins;
+    const gems = uDB.wallet.gems;
 
     const embed = new Discord.MessageEmbed()
       .setColor( member ? member.displayColor : Math.floor(Math.random() * 16777214) + 1)

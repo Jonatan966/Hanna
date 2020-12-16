@@ -1,8 +1,8 @@
-const fs = require('fs');
-const { oneLine } = require('common-tags');
-const Command = require('../base');
+import fs from 'fs';
+import { oneLine } from 'common-tags';
+import { Command } from '../base.js';
 
-module.exports = class LoadCommandCommand extends Command {
+export default class LoadCommandCommand extends Command {
 	constructor(client) {
 		super(client, {
 			name: 'load',
@@ -60,12 +60,12 @@ module.exports = class LoadCommandCommand extends Command {
 			} catch(err) {
 				this.client.emit('warn', `Error when broadcasting command load to other shards`);
 				this.client.emit('error', err);
-				await msg.reply(`Loaded \`${command.name}\` command, but failed to load on other shards.`);
+				await msg.inlineReply(`Loaded \`${command.name}\` command, but failed to load on other shards.`);
 				return null;
 			}
 		}
 
-		await msg.reply(`Loaded \`${command.name}\` command${this.client.shard ? ' on all shards' : ''}.`);
+		await msg.inlineReply(`Loaded \`${command.name}\` command${this.client.shard ? ' on all shards' : ''}.`);
 		return null;
 	}
 };

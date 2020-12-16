@@ -1,8 +1,7 @@
-const { Command } = require('../../CommandoV12/src/index.js');
-const { shorten } = require('../../Assets/util/util.js');
-const Discord = require('discord.js');
+import { Command } from '../../CommandoV12/src/index.js';
+import Discord from 'discord.js';
 
-module.exports = class UltMsgCommand extends Command {
+export default class UltMsgCommand extends Command {
   constructor(client) {
     super(client, {
       name: 'ultmsg',
@@ -24,19 +23,16 @@ module.exports = class UltMsgCommand extends Command {
 
   async run(message, { usuário }) {
     const client = message.client;
-    const uDB = client.usersData.get(usuário.id);
+    const uDB = client.data.users.resolveUser(usuário);
 
     if (!uDB) return message.embed({description: 'sem dados :/' })
-      .then(a => a.delete({ timeout: 5000 })
-      .then(message.delete({ timeout: 5000 })))
-      .then(() => null);
 
     const embed = new Discord.MessageEmbed()
-        .setDescription(shorten(uDB.lastMessageContent))
+        .setDescription(uDB.lastMessage.content)
         .setAuthor(usuário.tag, usuário.avatarURL())
-        .addField('Enviado em:', `${client.channels.cache.find(channel => channel.id === uDB.lastMessageChannelID)}`, true)
-        .setTimestamp(uDB.lastMessage)
-        .setImage(uDB.lastMessageAttachment ? uDB.lastMessageAttachment : undefined);
+        .setTimestamp(uDB.lastMessage.createdAt)
+        .setFooter('Enviado em:', `${client.channels.cache.get(uDB.lastMessage.channel)}`, this.client.user.avatarURL())
+        .setImage(uDB.lastMessage.attachment ? uDB.lastMessage.attachment : undefined);
 
     await message.embed(embed);
     message.delete()

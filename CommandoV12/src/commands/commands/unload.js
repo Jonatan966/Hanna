@@ -1,7 +1,7 @@
-const { oneLine } = require('common-tags');
-const Command = require('../base');
+import { oneLine } from 'common-tags';
+import { Command } from '../base.js';
 
-module.exports = class UnloadCommandCommand extends Command {
+export default class UnloadCommandCommand extends Command {
 	constructor(client) {
 		super(client, {
 			name: 'unload',
@@ -21,9 +21,9 @@ module.exports = class UnloadCommandCommand extends Command {
 				{
 					key: 'command',
 					prompt: 'Which command would you like to unload?',
-					type: 'command'
-				}
-			]
+					type: 'command',
+				},
+			],
 		});
 	}
 
@@ -38,12 +38,12 @@ module.exports = class UnloadCommandCommand extends Command {
 			} catch(err) {
 				this.client.emit('warn', `Error when broadcasting command unload to other shards`);
 				this.client.emit('error', err);
-				await msg.reply(`Unloaded \`${args.command.name}\` command, but failed to unload on other shards.`);
+				await msg.inlineReply(`Unloaded \`${args.command.name}\` command, but failed to unload on other shards.`);
 				return null;
 			}
 		}
 
-		await msg.reply(`Unloaded \`${args.command.name}\` command${this.client.shard ? ' on all shards' : ''}.`);
+		await msg.inlineReply(`Unloaded \`${args.command.name}\` command${this.client.shard ? ' on all shards' : ''}.`);
 		return null;
 	}
-};
+}

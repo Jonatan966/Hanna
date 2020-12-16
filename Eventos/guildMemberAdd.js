@@ -1,14 +1,15 @@
-const emojis = require('../Assets/JSON/emojis.json');
-const dbPressets= require('../Assets/JSON/dbPressets.json');
-const { stripIndents } = require('common-tags');
-const d = Date.now() - 10800000;
-let hora = `${new Date(d).getHours() - 3}:${new Date(d).getMinutes()}:${new Date(d).getSeconds()} `;
+import emojis from '../Assets/JSON/emojis.js';
+import dbPressets from '../Assets/JSON/dbPressets.js';
+import { stripIndents } from 'common-tags';
+function hora() {
+	const dataUTC = new Date(new Date().toUTCString());
+	const dataBR = new Date(dataUTC.getTime() - 10800000);
+	let hora = `${dataBR.toISOString().slice(11, -1)} `;
+	return hora
+}
 
-module.exports = async (client, membro) => {
-  console.log(hora, 'Evento \`guildMemberAdd\` emitido...');
-
-  const invitesData = client.invitesData;
-  const usersData = client.usersData;
+export default async (client, membro) => {
+  console.log(hora(), 'Evento \`guildMemberAdd\` emitido...');
 
   const id = membro.guild.id;
   
@@ -20,8 +21,6 @@ module.exports = async (client, membro) => {
   
   const roleID = '750073380711170142';
   const role = Wstore.roles.cache.get(roleID);
-
-  let iDB = {};
 
   // verifica em que servidor o membro entrou
   switch (id) {
@@ -35,68 +34,6 @@ module.exports = async (client, membro) => {
         const membro2 = Wstore.members.cache.get(membro.id);
         membro2.roles.add(role);
       }
-
-      // Cria um mapa dos convites atuais
-      const invitesA = invitesData;
-
-      Wclub.fetchInvites().then(invitesN => {
-
-        invite = invitesN.find(i => invitesA.get(i.code).uses < i.uses);
-        uDB = usersData.get(invite.inviter.id);
-
-        // Atualiza os convites
-        invitesN.forEach( invite => {
-          invitesData.set(invite.code, invite);
-        })
-
-        // Atualiza as gems
-        if(!usersData.has(membro.id) && !invite.inviter.bot) {
-          if(uDB.invites && uDB.gems) {
-            uDB.invites += 1;
-            uDB.gems += 1;
-          } else {
-            uDB.invites = 1;
-            uDB.gems = 1;
-          };
-
-        };
-      }).then(() => {
-
-        // Envia o embed
-        Wclub.channels.cache.get('751568642545680485').send({embed: {
-          color: emojis.warningC,
-          title: 'Uso de Convite:',
-          author: {
-            name: `${invite.inviter.tag} (${uDB ? uDB.invites ? uDB.invites : 0 : ''})`,
-            icon_url: invite.inviter.avatarURL()
-          },
-          description: stripIndents`
-          Código: **\'${invite.code}\'**
-          Usos(convite): ${invite.uses}
-          Temporário: **${invite.maxAge === 0 ? 'Não' : 'Sim'}**`,
-          fields: [
-            {
-              name: `${membro.user.tag} (${membro.id})`,
-              value: usersData.has(membro.id) ? `${emojis.fail} | Não é membro novo.` : `${emojis.success} | É membro novo.`
-            }
-          ],
-          timestamp: invite.maxAge != 0 ? invite.createdTimestamp + (invite.maxAge * 1000) : invite.createdTimestamp,
-          footer: {
-            text: invite.maxAge != 0 ? 'Válido até: ' : 'Criado:  '
-          }
-        }})
-
-      }).then(() => {
-        if(!usersData.has(membro.id)) {
-          usersData.set(membro.id, 
-            {
-              id: membro.id,
-              username: membro.user.username,
-              num: usersData.size + 1,
-              ...dbPressets
-            });
-        }
-      });
       break;
   }
 }

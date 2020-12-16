@@ -1,14 +1,7 @@
-/* eslint-disable no-shadow */
-/* eslint-disable no-unused-vars */
-/* eslint-disable curly */
-/* eslint-disable max-len */
-/* eslint-disable camelcase */
-/* eslint-disable complexity */
-const { escapeRegex } = require('./util');
-const emojis = require('../../Assets/JSON/emojis.json');
+import { escapeRegex } from './util.js';
 
 /** Handles parsing messages and running commands from them */
-class CommandDispatcher {
+export class CommandDispatcher {
 	/**
 	 * @param {CommandoClient} client - Client the dispatcher is for
 	 * @param {CommandoRegistry} registry - Registry the dispatcher will use
@@ -110,116 +103,7 @@ class CommandDispatcher {
 	 * @private
 	 */
 	async handleMessage(message, oldMessage) {
-		/* eslint-disable max-depth */
 		if(!this.shouldHandleMessage(message, oldMessage)) return;
-
-		// Define as constantes pra facilitar depois
-		const usersData = message.client.usersData;
-		const iDB = message.client.invitesData;
-
-		if(!usersData || !iDB) return;
-		const dbPressets = require('../../Assets/JSON/dbPressets.json');
-
-		const aID = message.author.id;
-		let aDB = usersData.get(aID);
-		const wcID = '698560208309452810';
-		const aUsername = message.author.username;
-		const isWC = message.guild ? message.guild.id === wcID : false;
-
-		const wc = message.client.guilds.cache.get('698560208309452810');
-		const aWcMember = wc.members.cache.get(aID);
-
-		const vipRole = wc.roles.cache.get('754453852618489946');
-		const hVip = aWcMember._roles.includes('754453852618489946');
-
-		const familyRole = wc.roles.cache.get('750739449889030235');
-		const hFamily = aWcMember._roles.includes('750739449889030235');
-
-		const chngNickRole = wc.roles.cache.get('735677045954314362');
-		const hChngNick = aWcMember._roles.includes('735677045954314362');
-
-		const aCustomStatus = aWcMember.presence.activities.find(act => act.type === 'CUSTOM_STATUS');
-		const aPresenceUndefined = aCustomStatus === undefined;
-		const aPresenceNull = aPresenceUndefined ? true : aCustomStatus.state === null;
-
-
-		let tempLM;
-
-		// Cria os pressets do db se não existem
-		if(!usersData.has(aID)) {
-			usersData.set(aID, {
-				id: aID,
-				username: message.author.username,
-				...dbPressets
-			});
-
-			tempLM = 0;
-		} else if(aDB.lastMessage !== null) {
-			tempLM = new Date() - aDB.lastMessage.valueOf();
-		} else tempLM = 0;
-
-		aDB = usersData.get(aID);
-
-		// Atualiza os valores para "lastMsg"
-		aDB.lastMessage = `${message.createdAt.toISOString()}`;
-		aDB.lastMessageContent = `${message.content}`;
-		aDB.lastMessageChannelID = `${message.channel.id}`;
-		aDB.lastMessageAttachment = message.attachments.first() ? message.attachments.first().url : null;
-
-		// Caso o membro seja vip
-		if(aDB.vip) {
-			if(aDB.vipUntil < new Date()) {
-				aWcMember.roles.remove(vipRole, 'VIP acaba de expirar');
-				aDB.vip = false;
-				aDB.vipUntil = null;
-			} else if(!hVip) aWcMember.roles.add(vipRole, 'Membro VIP');
-		} else if(hVip) aWcMember.roles.remove(vipRole, 'VIP expirado');
-
-		if(isWC) {
-			// Verifica se é membro ativo
-			if(tempLM > 86400000) {
-				// Retira 25 de xp por minuto, se ficar 1 dia inativo
-				aDB.xp -= Math.floor(25 * Math.round(tempLM / 60000));
-				aDB.mensagens += 1;
-			} else {
-				// Atualiza xp e número de mensagens
-				aDB.xp += 5;
-				aDB.mensagens += 1;
-				aDB.money += 1;
-			}
-
-			// Se username correto: add xp e cargo, se não tiver
-			if(aUsername.startsWith('!ʷᶜ') || aUsername.startsWith('!𝓦𝓒')) {
-				aDB.xp += 4;
-				if(!hFamily) aWcMember.roles.add(familyRole, 'Username começa com \'!ʷᶜ\' ou \'!𝓦𝓒\'');
-			// Se username errado: retira o cargo de família, se tiver
-			} else if(hFamily) aWcMember.roles.remove(familyRole, 'Username NÃO começa com \'!ʷᶜ\' ou \'!𝓦𝓒\'');
-
-			// Se tiver "CUSTOM_STATUS" com state
-			if(!aPresenceUndefined && !aPresenceNull) {
-				let codes = [];
-				let incluidos = [];
-
-				// Filtra os convites permanentes e verifica se o status do autor inclui um deles
-				iDB.forEach(inv => {
-					if(inv.maxAge === 0) codes.push(inv.code);
-				});
-				for(const code of codes) {
-					if(aCustomStatus.state.includes(code)) incluidos.push(code);
-				}
-
-				// Caso tenha convite permanente
-				if(incluidos.length > 0) {
-					aDB.money += 1;
-					// Caso não tenha a perm
-					if(!hChngNick) aWcMember.roles.add(chngNickRole, 'Convite permanente no status');
-
-				// Caso não tenha convite permanente
-				} else if(hChngNick) aWcMember.roles.remove(chngNickRole, 'Não tem convite permanente no Status');
-
-			// Caso não tenha status customizado
-			} else if(hChngNick) aWcMember.roles.remove(chngNickRole, 'Não tem convite permanente no Status');
-		}
 
 		// Parse the message, and get the old result if it exists
 		let cmdMsg, oldCmdMsg;
@@ -242,26 +126,23 @@ class CommandDispatcher {
 
 			if(!inhibited) {
 				if(cmdMsg.command) {
-					if(!cmdMsg.command.isEnabledIn(message.guild)) {
+					// If(!cmdMsg.command.isEnabledIn(message.channel)) {
+						/*
 						if(!cmdMsg.command.unknown) {
 							responses = await cmdMsg.embed({
 								color: emojis.warningC,
-								description: `emojis.warning |  \`${cmdMsg.command.name}\` está **desabilitado**.`
+								description: `${emojis.warning} |  \`${cmdMsg.command.name}\` está **desabilitado**.`
 							});
 						} else {
-							/**
-							 * Emitted when an unknown command is triggered
-							 * @event CommandoClient#unknownCommand
-							 * @param {CommandoMessage} message - Command message that triggered the command
-							 */
 							this.client.emit('unknownCommand', cmdMsg);
 							responses = undefined;
 						}
-					} else if(!oldMessage || typeof oldCmdMsg !== 'undefined') {
-						responses = await cmdMsg.run();
-						if(typeof responses === 'undefined') responses = null;
-						if(Array.isArray(responses)) responses = await Promise.all(responses);
-					}
+						*/
+					// } else if(!oldMessage || typeof oldCmdMsg !== 'undefined') {
+					responses = await cmdMsg.run();
+					if(typeof responses === 'undefined') responses = null;
+					if(Array.isArray(responses)) responses = await Promise.all(responses);
+					// }
 				} else {
 					this.client.emit('unknownCommand', cmdMsg);
 					responses = undefined;
@@ -322,7 +203,7 @@ class CommandDispatcher {
 				);
 				if(!valid) {
 					throw new TypeError(
-						`Inhibitor "${inhibitor.name}" had an invalid result; must be a string or an Inhibition object.`
+						`Inhibitor "${inhibitor.name}" had an invalid result; must be a string or an Inhibition object.`,
 					);
 				}
 
@@ -409,7 +290,7 @@ class CommandDispatcher {
 		if(prefix) {
 			const escapedPrefix = escapeRegex(prefix);
 			pattern = new RegExp(
-				`^(<@!?${this.client.user.id}>\\s+(?:${escapedPrefix}\\s*)?|${escapedPrefix}\\s*)([^\\s]+)`, 'i'
+				`^(<@!?${this.client.user.id}>\\s+(?:${escapedPrefix}\\s*)?|${escapedPrefix}\\s*)([^\\s]+)`, 'i',
 			);
 		} else {
 			pattern = new RegExp(`(^<@!?${this.client.user.id}>\\s+)([^\\s]+)`, 'i');
@@ -420,4 +301,3 @@ class CommandDispatcher {
 	}
 }
 
-module.exports = CommandDispatcher;

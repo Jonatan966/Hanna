@@ -1,7 +1,8 @@
-const { Command } = require('../../CommandoV12/src/index.js');
-const Discord = require('discord.js');
+import { Command } from '../../CommandoV12/src/index.js';
+import Discord from 'discord.js';
+import catálogo from '../../Assets/JSON/catálogo.js';
 
-module.exports = class CarteiraCommand extends Command {
+export default  class CarteiraCommand extends Command {
 	constructor(client) {
 		super(client, {
 			name: 'cores',
@@ -18,8 +19,6 @@ module.exports = class CarteiraCommand extends Command {
 	}
 
 	async run(msg) {
-
-    const catálogo = require('../../Assets/JSON/catálogo.json');
 
     const uDB = msg.client.usersData.get(msg.author.id);
     const wcRolesCache = msg.client.guilds.cache.get('698560208309452810').roles.cache;
@@ -56,9 +55,9 @@ module.exports = class CarteiraCommand extends Command {
       .setColor(wcMember.displayColor)
       .setAuthor(msg.author.tag, msg.author.avatarURL())
 			.addField('Em uso:', `${atual}`)
-      .addField('Compradas: ', `${compradas}`, true)
+      .addField(':paintbrush: | Compradas: ', `${compradas}`)
     if(uDB.vip) {
-      embed.addField('VIP:', `${VIPs.join(', ')}`, true);
+      embed.addField('🏵 | VIP:', `${VIPs.join(', ')}`);
     }
       msg.embed(embed);
 		}

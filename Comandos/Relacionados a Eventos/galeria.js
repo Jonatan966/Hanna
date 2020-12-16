@@ -1,7 +1,7 @@
-const { Command } = require('../../CommandoV12/src/index.js');
-const Discord = require('discord.js');
+import { Command } from '../../CommandoV12/src/index.js';
+import Discord from 'discord.js';
 
-module.exports = class InstagramCommand extends Command {
+export default class InstagramCommand extends Command {
   constructor(client) {
     super(client, {
       name: 'galeria',
@@ -46,8 +46,8 @@ module.exports = class InstagramCommand extends Command {
             await instagram.send({embed: publicação}).then(pub => {
                 message.react('738900367814819940')
                 pub.react('❤️')
-            }, err => message.reply(`algo deu errado...\n${err.name}:${err.name}`));
+            }, err => message.inlineReply(`algo deu errado...\n${err.name}:${err.name}`));
         }
-        else message.reply('cadê a image?');
+        else message.inlineReply('cadê a image?');
     }
 };

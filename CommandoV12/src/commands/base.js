@@ -1,13 +1,14 @@
-const path = require('path');
-const { escapeMarkdown } = require('discord.js');
-const { oneLine, stripIndents } = require('common-tags');
-const ArgumentCollector = require('./collector');
-const { permissions } = require('../util');
-const Discord = require('discord.js');
-const emojis = require('../../../Assets/JSON/emojis.json');
+import path from 'path';
+import { escapeMarkdown } from 'discord.js';
+import { oneLine, stripIndents } from 'common-tags';
+import { ArgumentCollector } from './collector.js';
+import { permissions } from '../util.js'
+import emojis from '../../../Assets/JSON/emojis.js';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 
 /** A command that can be run in a client */
-class Command {
+export class Command {
 	/**
 	 * @typedef {Object} ThrottlingOptions
 	 * @property {number} usages - Maximum number of usages of the command allowed in the time frame.
@@ -161,7 +162,7 @@ class Command {
 
 		/**
 		* Channels the command is blacklisted on.
-		* @type {?string[]}
+		* @type {?array[]}
 		*/
 	   this.blackListed = info.blackListed || null;
 
@@ -263,7 +264,7 @@ class Command {
 	 */
 	// eslint-disable-next-line complexity
 	hasPermission(message, ownerOverride = true) {
-		if(!this.ownerOnly && !this.userPermissions && !this.userRoles && !this.blackListed) return true;
+		if(!this.ownerOnly && !this.userPermissions && this.isEnabledIn(message.channel) && !this.userRoles && !this.blackListed) return true;
 		if(ownerOverride && this.client.isOwner(message.author)) return true;
 
 		if(this.ownerOnly && (ownerOverride || !this.client.isOwner(message.author))) {
@@ -293,10 +294,13 @@ class Command {
 			}
 		}
 
+		if(!this.isEnabledIn(message.channel))
+			return `${emojis.warning} | O comando \`${this.name}\` não pode ser usado no canal:${message.channel}`;
+
 		if(message.channel.type === 'text' && this.blackListed) {
 			if(this.blackListed.includes(message.channel.id)) {
-					return `${emojis.warning} | O comando \`${this.name}\` não pode ser usado no canal:${message.channel}`;
-				}
+				return `${emojis.warning} | O comando \`${this.name}\` não pode ser usado no canal:${message.channel}`;
+			}
 		}
 
 		return true;
@@ -352,8 +356,6 @@ class Command {
 			case 'throttling': {
 				if (this.throttling.respond !== false) return message.embed({ color: emojis.warningC, description: `${emojis.warning} | Aguarde ${data.remaining.toFixed(1)} segundos antes de usar o comando \`${this.name}\` denovo.`});
 			}
-			default:
-				return null;
 		}
 	}
 
@@ -410,17 +412,17 @@ class Command {
 	 * @param {?GuildResolvable} guild - Guild to enable/disable the command in
 	 * @param {boolean} enabled - Whether the command should be enabled or disabled
 	 */
-	setEnabledIn(guild, enabled) {
-		if(typeof guild === 'undefined') throw new TypeError('Guild must not be undefined.');
+	setEnabledIn(guildOrChannel, enabled) {
+		if(typeof guildOrChannel === 'undefined') throw new TypeError('Channel must not be undefined.');
 		if(typeof enabled === 'undefined') throw new TypeError('Enabled must not be undefined.');
 		if(this.guarded) throw new Error('The command is guarded.');
-		if(!guild) {
+		if(!guildOrChannel) {
 			this._globalEnabled = enabled;
 			this.client.emit('commandStatusChange', null, this, enabled);
 			return;
 		}
-		guild = this.client.guilds.resolve(guild);
-		guild.setCommandEnabled(this, enabled);
+		guildOrChannel = this.client.channels.resolve(guildOrChannel) || this.client.guilds.resolve(guildOrChannel);
+		guildOrChannel.setCommandEnabled(this, enabled);
 	}
 
 	/**
@@ -429,11 +431,11 @@ class Command {
 	 * @param {boolean} [bypassGroup] - Whether to bypass checking the group's status
 	 * @return {boolean}
 	 */
-	isEnabledIn(guild, bypassGroup) {
+	isEnabledIn(guildOrChannel, bypassGroup) {
 		if(this.guarded) return true;
-		if(!guild) return this.group._globalEnabled && this._globalEnabled;
-		guild = this.client.guilds.resolve(guild);
-		return (bypassGroup || guild.isGroupEnabled(this.group)) && guild.isCommandEnabled(this);
+		if(!guildOrChannel) return this.group._globalEnabled && this._globalEnabled;
+		guildOrChannel = this.client.channels.resolve(guildOrChannel) || this.client.guilds.resolve(guildOrChannel);
+		return (bypassGroup || guildOrChannel.isGroupEnabled(this.group)) && guildOrChannel.isCommandEnabled(this);
 	}
 
 	/**
@@ -445,7 +447,7 @@ class Command {
 		if(!message) return this._globalEnabled;
 		if(this.guildOnly && message && !message.guild) return false;
 		const hasPermission = this.hasPermission(message);
-		return this.isEnabledIn(message.guild) && hasPermission && typeof hasPermission !== 'string';
+		return true && hasPermission && typeof hasPermission !== 'string';
 	}
 
 	/**
@@ -592,4 +594,3 @@ class Command {
 	}
 }
 
-module.exports = Command;

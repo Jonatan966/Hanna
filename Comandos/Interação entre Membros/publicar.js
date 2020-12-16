@@ -1,7 +1,7 @@
-const { Command } = require('../../CommandoV12/src/index.js');
-const Discord = require('discord.js');
+import { Command } from '../../CommandoV12/src/index.js';
+import Discord from 'discord.js';
 
-module.exports = class PublicarCommand extends Command {
+export default class PublicarCommand extends Command {
   constructor(client) {
     super(client, {
       name: 'publicar',
@@ -35,7 +35,7 @@ module.exports = class PublicarCommand extends Command {
             const publicação = new Discord.MessageEmbed()
             .setColor( message.member ? message.member.displayColor : Math.floor(Math.random() * 16777214) + 1)
             .setTitle(título)
-            .setAuthor(message.author.username + '#' + message.author.discriminator, message.author.avatarURL())
+            .setAuthor(message.author.tag, message.author.avatarURL())
             .setImage(img.url)
             .setTimestamp()
             .setFooter('Não sabe como fazer suas publicações? hajuda publicar', message.client.user.avatarURL());
@@ -45,8 +45,8 @@ module.exports = class PublicarCommand extends Command {
                 if (message.channel.id === '698678688153206915') message.delete();
                 pub.react('👍')
                     .then(() => pub.react('👎'));
-            }, err => message.reply(`algo deu errado...\n${err.name}:${err.name}`));
+            }, err => message.inlineReply(`algo deu errado...\n${err.name}:${err.name}`));
         }
-        else message.reply('cadê a image?');
+        else message.inlineReply('cadê a image?');
     }
 };

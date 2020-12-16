@@ -1,12 +1,16 @@
-const path = require('path');
-const discord = require('discord.js');
-const Command = require('./commands/base');
-const CommandGroup = require('./commands/group');
-const CommandoMessage = require('./extensions/message');
-const ArgumentType = require('./types/base');
+//import { createRequire } from 'module';
+//const require = createRequire(import.meta.url);
+
+import { readdirSync } from 'fs';
+import path from 'path';
+import discord from 'discord.js';
+import { Command } from './commands/base.js';
+import { CommandGroup } from './commands/group.js';
+import { CommandoMessage } from './extensions/message.js';
+import { ArgumentType } from './types/base.js';
 
 /** Handles registration and searching of commands and groups */
-class CommandoRegistry {
+export class CommandoRegistry {
 	/** @param {CommandoClient} [client] - Client to use  */
 	constructor(client) {
 		/**
@@ -78,7 +82,7 @@ class CommandoRegistry {
 			 * @param {CommandoRegistry} registry - Registry that the group was registered to
 			 */
 			this.client.emit('groupRegister', group, this);
-			this.client.emit('debug', `Registered group ${group.id}.`);
+			this.client.emit('debug', `Grupo ${group.id} registrado.`);
 		}
 
 		return this;
@@ -153,7 +157,7 @@ class CommandoRegistry {
 		 * @param {CommandoRegistry} registry - Registry that the command was registered to
 		 */
 		this.client.emit('commandRegister', command, this);
-		this.client.emit('debug', `Registered command ${group.id}:${command.memberName}.`);
+		this.client.emit('debug', `Comando ${group.id}:${command.memberName} registrado.`);
 
 		return this;
 	}
@@ -170,7 +174,7 @@ class CommandoRegistry {
 			const valid = typeof command === 'function' || typeof command.default === 'function' ||
 				command instanceof Command || command.default instanceof Command;
 			if(ignoreInvalid && !valid) {
-				this.client.emit('warn', `Attempting to register an invalid command object: ${command}; skipping.`);
+				this.client.emit('warn', `Tentando registrar um comando inválido: ${command}; pulando.`);
 				continue;
 			}
 			this.registerCommand(command);
@@ -186,18 +190,25 @@ class CommandoRegistry {
 	 * const path = require('path');
 	 * registry.registerCommandsIn(path.join(__dirname, 'commands'));
 	 */
-	registerCommandsIn(options) {
-		const obj = require('require-all')(options);
-		const commands = [];
-		for(const group of Object.values(obj)) {
-			for(let command of Object.values(group)) {
-				if(typeof command.default === 'function') command = command.default;
-				commands.push(command);
-			}
-		}
+	async registerCommandsIn(options) {
 		if(typeof options === 'string' && !this.commandsPath) this.commandsPath = options;
 		else if(typeof options === 'object' && !this.commandsPath) this.commandsPath = options.dirname;
+
+		const commandPaths = []
+		readdirSync(this.commandsPath).forEach(grupo => {
+			readdirSync(`${this.commandsPath}/${grupo}`).forEach(arquivo => {
+				commandPaths.push(`../.${this.commandsPath}/${grupo}/${arquivo}`);
+			})
+		})
+
+		const commands = [];
+		for(const command of commandPaths) {
+			const classe = await import(command);
+			commands.push(classe.default);
+		}
+
 		return this.registerCommands(commands, true);
+
 	}
 
 	/**
@@ -227,7 +238,7 @@ class CommandoRegistry {
 		 * @param {CommandoRegistry} registry - Registry that the type was registered to
 		 */
 		this.client.emit('typeRegister', type, this);
-		this.client.emit('debug', `Registered argument type ${type.id}.`);
+		this.client.emit('debug', `Tipo de argumento ${type.id} registrado.`);
 
 		return this;
 	}
@@ -244,7 +255,7 @@ class CommandoRegistry {
 			const valid = typeof type === 'function' || typeof type.default === 'function' ||
 				type instanceof ArgumentType || type.default instanceof ArgumentType;
 			if(ignoreInvalid && !valid) {
-				this.client.emit('warn', `Attempting to register an invalid argument type object: ${type}; skipping.`);
+				this.client.emit('warn', `Tentando registrar um tipo de argumento inválido: ${type}; pulando.`);
 				continue;
 			}
 			this.registerType(type);
@@ -312,19 +323,17 @@ class CommandoRegistry {
 			help: true, prefix: true, ping: true, eval: true,
 			unknownCommand: true, commandState: true, ...commands
 		};
-		if(commands.help) this.registerCommand(require('./commands/util/help'));
-		if(commands.prefix) this.registerCommand(require('./commands/util/prefix'));
-		if(commands.ping) this.registerCommand(require('./commands/util/ping'));
-		if(commands.eval) this.registerCommand(require('./commands/util/eval'));
+		if(commands.help) import('./commands/util/help.js').then(command => this.registerCommand(command.default));
+		if(commands.prefix) import('./commands/util/prefix.js').then(command => this.registerCommand(command.default));
+		if(commands.ping) import('./commands/util/ping.js').then(command => this.registerCommand(command.default));
+		if(commands.eval) import('./commands/util/eval.js').then(command => this.registerCommand(command.default));
 		if(commands.commandState) {
-			this.registerCommands([
-				require('./commands/commands/groups'),
-				require('./commands/commands/enable'),
-				require('./commands/commands/disable'),
-				require('./commands/commands/reload'),
-				require('./commands/commands/load'),
-				require('./commands/commands/unload')
-			]);
+			import('./commands/commands/groups.js').then(command => this.registerCommand(command.default));
+			import('./commands/commands/enable.js').then(command => this.registerCommand(command.default));
+			import('./commands/commands/disable.js').then(command => this.registerCommand(command.default));
+			import('./commands/commands/reload.js').then(command => this.registerCommand(command.default));
+			import('./commands/commands/load.js').then(command => this.registerCommand(command.default));
+			import('./commands/commands/unload.js').then(command => this.registerCommand(command.default));
 		}
 		return this;
 	}
@@ -356,21 +365,22 @@ class CommandoRegistry {
 			voiceChannel: true, categoryChannel: true, message: true, customEmoji: true,
 			command: true, group: true, ...types
 		};
-		if(types.string) this.registerType(require('./types/string'));
-		if(types.integer) this.registerType(require('./types/integer'));
-		if(types.float) this.registerType(require('./types/float'));
-		if(types.boolean) this.registerType(require('./types/boolean'));
-		if(types.user) this.registerType(require('./types/user'));
-		if(types.member) this.registerType(require('./types/member'));
-		if(types.role) this.registerType(require('./types/role'));
-		if(types.channel) this.registerType(require('./types/channel'));
-		if(types.textChannel) this.registerType(require('./types/text-channel'));
-		if(types.voiceChannel) this.registerType(require('./types/voice-channel'));
-		if(types.categoryChannel) this.registerType(require('./types/category-channel'));
-		if(types.message) this.registerType(require('./types/message'));
-		if(types.customEmoji) this.registerType(require('./types/custom-emoji'));
-		if(types.command) this.registerType(require('./types/command'));
-		if(types.group) this.registerType(require('./types/group'));
+
+		if(types.string) import('./types/string.js').then(type => this.registerType(type.default));
+		if(types.integer) import('./types/integer.js').then(type => this.registerType(type.default));
+		if(types.float) import('./types/float.js').then(type => this.registerType(type.default));
+		if(types.boolean) import('./types/boolean.js').then(type => this.registerType(type.default));
+		if(types.user) import('./types/user.js').then(type => this.registerType(type.default));
+		if(types.member) import('./types/member.js').then(type => this.registerType(type.default));
+		if(types.role) import('./types/role.js').then(type => this.registerType(type.default));
+		if(types.channel) import('./types/channel.js').then(type => this.registerType(type.default));
+		if(types.textChannel) import('./types/text-channel.js').then(type => this.registerType(type.default));
+		if(types.voiceChannel) import('./types/voice-channel.js').then(type => this.registerType(type.default));
+		if(types.categoryChannel) import('./types/category-channel.js').then(type => this.registerType(type.default));
+		if(types.message) import('./types/message.js').then(type => this.registerType(type.default));
+		if(types.customEmoji) import('./types/custom-emoji.js').then(type => this.registerType(type.default));
+		if(types.command) import('./types/command.js').then(type => this.registerType(type.default));
+		if(types.group) import('./types/group.js').then(type => this.registerType(type.default));
 		return this;
 	}
 
@@ -405,7 +415,7 @@ class CommandoRegistry {
 		 * @param {Command} oldCommand - Old command
 		 */
 		this.client.emit('commandReregister', command, oldCommand);
-		this.client.emit('debug', `Reregistered command ${command.groupID}:${command.memberName}.`);
+		this.client.emit('debug', `Comando ${command.groupID}:${command.memberName} reregistrado.`);
 	}
 
 	/**
@@ -423,7 +433,7 @@ class CommandoRegistry {
 		 * @param {Command} command - Command that was unregistered
 		 */
 		this.client.emit('commandUnregister', command);
-		this.client.emit('debug', `Unregistered command ${command.groupID}:${command.memberName}.`);
+		this.client.emit('debug', `Comando ${command.groupID}:${command.memberName} desregistrado.`);
 	}
 
 	/**
@@ -554,5 +564,3 @@ function commandFilterInexact(search) {
 		`${cmd.groupID}:${cmd.memberName}` === search ||
 		(cmd.aliases && cmd.aliases.some(ali => ali.includes(search)));
 }
-
-module.exports = CommandoRegistry;

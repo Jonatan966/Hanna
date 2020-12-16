@@ -1,13 +1,13 @@
-const util = require('util');
-const discord = require('discord.js');
-const tags = require('common-tags');
-const { escapeRegex } = require('../../util');
-const Command = require('../base');
+import util from 'util';
+import discord from 'discord.js';
+import tags from 'common-tags';
+import { escapeRegex } from '../../util.js';
+import { Command } from '../base.js';
 
 const nl = '!!NL!!';
 const nlPattern = new RegExp(nl, 'g');
 
-module.exports = class EvalCommand extends Command {
+export default class EvalCommand extends Command {
 	constructor(client) {
 		super(client, {
 			name: 'eval',
@@ -21,9 +21,9 @@ module.exports = class EvalCommand extends Command {
 				{
 					key: 'script',
 					prompt: 'What code would you like to evaluate?',
-					type: 'string'
-				}
-			]
+					type: 'string',
+				},
+			],
 		});
 
 		this.lastResult = null;
@@ -33,21 +33,20 @@ module.exports = class EvalCommand extends Command {
 	run(msg, args) {
 		// Make a bunch of helpers
 		/* eslint-disable no-unused-vars */
-		const { db } = require('../../../../index.js');
-		const catálogo = require('../../../../Assets/JSON/catálogo.json');
 		const message = msg;
 		const client = msg.client;
-		const { usersData, invitesData } = client;
+		const { data } = client;
+		const { users } = client;
 		const lastResult = this.lastResult;
 		const doReply = val => {
 			if(val instanceof Error) {
-				msg.reply(`Erro durante Callback: \`${val}\``);
+				msg.inlineReply(`Erro durante Callback: \`${val}\``);
 			} else {
 				const result = this.makeResultMessages(val, process.hrtime(this.hrStart));
 				if(Array.isArray(result)) {
-					for(const item of result) msg.reply(item);
+					for(const item of result) msg.inlineReply(item);
 				} else {
-					msg.reply(result);
+					msg.inlineReply(result);
 				}
 			}
 		};
@@ -60,16 +59,16 @@ module.exports = class EvalCommand extends Command {
 			this.lastResult = eval(args.script);
 			hrDiff = process.hrtime(hrStart);
 		} catch(err) {
-			return msg.reply(`Erro durante execução: \`${err.name}: ${err.message}\``);
+			return msg.inlineReply(`Erro durante execução: \`${err.name}: ${err.message}\``);
 		}
 
 		// Prepare for callback time and respond
 		this.hrStart = process.hrtime();
 		const result = this.makeResultMessages(this.lastResult, hrDiff, args.script);
 		if(Array.isArray(result)) {
-			return result.map(item => msg.reply(item));
+			return result.map(item => msg.inlineReply(item));
 		} else {
-			return msg.reply(result);
+			return msg.inlineReply(result);
 		}
 	}
 
@@ -111,4 +110,4 @@ module.exports = class EvalCommand extends Command {
 		}
 		return this._sensitivePattern;
 	}
-};
+}

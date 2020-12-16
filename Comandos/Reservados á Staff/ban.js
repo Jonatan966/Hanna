@@ -1,8 +1,7 @@
-const { Command } = require('../../CommandoV12/src/index.js');
-const Discord = require('discord.js');
-const emojis = require('../../Assets/JSON/emojis.json');
+import { Command } from '../../CommandoV12/src/index.js';
+import emojis from '../../Assets/JSON/emojis.js';
 
-module.exports = class SetGemsCommand extends Command {
+export default class SetGemsCommand extends Command {
 	constructor(client) {
 		super(client, {
       name: 'ban',
@@ -24,41 +23,21 @@ module.exports = class SetGemsCommand extends Command {
 					bot: false
         },
         {
-          key: 'tempoMensagens',
-          prompt: 'Apagar mensagens de quantos dias atrás? (0 para não apagar)\nOu, qual o motivo do banimento?',
-          type: 'string',
-        },
-        {
           key: 'motivo',
           prompt: 'Qual o motivo do banimento ?',
           type: 'string',
-          default: ''
         }
 			],
 		});
 	}
 
-	async run(msg, { usuário, motivo, tempoMensagens }) {
+	async run(msg, { usuário, motivo }) {
 
     const logChannel = msg.client.channels.cache.get('719397962287022192');
     const Wclub = msg.client.guilds.cache.get('698560208309452810');
 
     const membro = Wclub.members.cache.get(usuário.id);
     const CliMember = Wclub.members.cache.get(msg.client.user.id);
-
-    let tempo = tempoMensagens;
-    let motivoC = motivo;
-
-    if(Number.isInteger(Number(tempoMensagens)) || 0 > tempoMensagens || 7 < tempoMensagens && motivo) {
-      motivoC += tempoMensagens;
-      tempo = 0;
-    } else if(Number.isInteger(Number(tempoMensagens)) || 0 > tempoMensagens || 7 < tempoMensagens && !motivo) {
-      motivoC = motivo;
-      tempo = 0;
-    } else {
-      motivoC = 'sem motivo';
-      tempo = tempoMensagens;
-    }
 
 
     if(membro) {
@@ -70,7 +49,7 @@ module.exports = class SetGemsCommand extends Command {
     };
 
     try {
-      await Wclub.members.ban(usuário, {days: tempo, reason: `${msg.author.tag}(${msg.author.id}) Baniu ${usuário.tag}(${usuário.id}) com o motivo: ${motivoC}`});
+      await Wclub.members.ban(usuário, {  reason: `${msg.author.tag}(${msg.author.id}) Baniu ${usuário.tag}(${usuário.id}) com o motivo: ${motivoC}` });
       await msg.embed({color: emojis.successC, description: `${emojis.success} | Membro banido.`});
     } catch(err) {
       await msg.embed({color: emojis.failC, description: `${emojis.fail} | Algo deu errado tentando banir esse membro: \`${err.name}\`: \`${err.message}\``});

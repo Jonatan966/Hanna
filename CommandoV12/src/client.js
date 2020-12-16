@@ -1,14 +1,13 @@
-const discord = require('discord.js');
-const CommandoRegistry = require('./registry');
-const CommandDispatcher = require('./dispatcher');
-const GuildSettingsHelper = require('./providers/helper');
-const Collection = require('@discordjs/collection');
+import discord from 'discord.js';
+import { CommandoRegistry } from './registry.js';
+import { CommandDispatcher } from './dispatcher.js';
+import { GuildSettingsHelper } from './providers/helper.js';
 
 /**
  * Discord.js Client with a command framework
  * @extends {Client}
  */
-class CommandoClient extends discord.Client {
+export class CommandoClient extends discord.Client {
 	/**
 	 * Options for a CommandoClient
 	 * @typedef {ClientOptions} CommandoClientOptions
@@ -54,24 +53,6 @@ class CommandoClient extends discord.Client {
 		this.settings = new GuildSettingsHelper(this, null);
 
 		/**
-		 * Collection of games being played
-		 * @type {Collection}
-		 */
-		this.games = new Collection();
-
-		/**
-		 * Collection of users
-		 * @type {Collection}
-		 */
-		this.usersData = new Map();
-
-		/**
-		 * Collection of invites
-		 * @type {Collection}
-		 */
-		this.invitesData = new Map();
-
-		/**
 		 * Internal global command prefix, controlled by the {@link CommandoClient#commandPrefix} getter/setter
 		 * @type {?string}
 		 * @private
@@ -104,6 +85,7 @@ class CommandoClient extends discord.Client {
 			});
 		}
 	}
+
 
 	/**
 	 * Global command prefix. An empty string indicates that there is no default prefix, and only mentions will be used.
@@ -161,16 +143,17 @@ class CommandoClient extends discord.Client {
 		this.provider = newProvider;
 
 		if(this.readyTimestamp) {
-			this.emit('debug', `Provider set to ${newProvider.constructor.name} - initialising...`);
+			this.emit('debug', `Provider configurado como ${newProvider.constructor.name} - inicializando...`);
 			await newProvider.init(this);
-			this.emit('debug', 'Provider finished initialisation.');
-			return undefined;
+			this.emit('debug', 'Provider terminou a inicialização.');
+			return this;
 		}
 
-		this.emit('debug', `Provider set to ${newProvider.constructor.name} - will initialise once ready.`);
+		this.emit('debug',
+		`Provider configurado como ${newProvider.constructor.name} - inicializando assim que o client estiver pronto.`);
 		await new Promise(resolve => {
 			this.once('ready', () => {
-				this.emit('debug', `Initialising provider...`);
+				this.emit('debug', `Inicializando Provider...`);
 				resolve(newProvider.init(this));
 			});
 		});
@@ -181,7 +164,7 @@ class CommandoClient extends discord.Client {
 		 * @param {SettingProvider} provider - Provider that was initialised
 		 */
 		this.emit('providerReady', provider);
-		this.emit('debug', 'Provider finished initialisation.');
+		this.emit('debug', 'Provider terminou a inicialização.');
 		return undefined;
 	}
 
@@ -191,4 +174,3 @@ class CommandoClient extends discord.Client {
 	}
 }
 
-module.exports = CommandoClient;

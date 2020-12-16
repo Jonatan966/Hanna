@@ -1,7 +1,8 @@
-const { stripIndents } = require('common-tags');
-const Command = require('../base');
+import { stripIndents } from 'common-tags';
+import emojis from '../../../../Assets/JSON/emojis.js';
+import { Command } from '../base.js';
 
-module.exports = class ListGroupsCommand extends Command {
+export default class ListGroupsCommand extends Command {
 	constructor(client) {
 		super(client, {
 			name: 'groups',
@@ -20,11 +21,11 @@ module.exports = class ListGroupsCommand extends Command {
 	}
 
 	run(msg) {
-		return msg.reply(stripIndents`
-			__**Groups**__
+		return msg.embed({description: stripIndents`
+			__**Grupos em ${msg.channel}**__
 			${this.client.registry.groups.map(grp =>
-				`**${grp.name}:** ${grp.isEnabledIn(msg.guild) ? 'Enabled' : 'Disabled'}`
+				`${grp.isEnabledIn(msg.channel) && grp.isEnabledIn() ? emojis.success : emojis.fail}**${grp.name}:** ${grp.isEnabledIn(msg.channel) && grp.isEnabledIn() ? `Habilitado` : 'Desabilitado'}`
 			).join('\n')}
-		`);
+		`});
 	}
 };
